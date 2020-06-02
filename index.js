@@ -56,12 +56,11 @@ const retrieveResources = async (resourcesPath, mode) => {
       .filter(it => it != null);
   };
 
-  if (mode === MODE.DRAWABLE || mode === MODE.LAYOUT) {
-    const result = await retrieveFileResources();
-    return result;
-  }
-  if (mode === MODE.COLOR || mode === MODE.DIMEN) {
+  if (resourcesPath.endsWith('.xml')) {
     const result = await retrieveResourcesFromFile();
+    return result;
+  } else {
+    const result = await retrieveFileResources();
     return result;
   }
 }
