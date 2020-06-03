@@ -4,7 +4,8 @@ const MODE = {
   DRAWABLE: 'drawable',
   COLOR: 'color',
   DIMEN: 'dimen',
-  LAYOUT: 'layout'
+  LAYOUT: 'layout',
+  STYLE: 'style'
 };
 
 const ALLOWED_EXTENSIONS = ['java', 'kt', 'xml'];
@@ -44,7 +45,7 @@ const retrieveResources = async (resourcesPath, mode) => {
     const data = await readFile(resourcesPath);
     const tokens = data.split('\n');
     const tag = resourceXmlTag(mode);
-    const regex = new RegExp(`${ tag } name="(.*)"`);
+    const regex = new RegExp(`${ tag } name="(.*?)"`);
     return tokens
       .map(token => {
         const match = token.match(regex);
@@ -70,7 +71,12 @@ const findResourcesUsedInFile = async (file, resources, mode) => {
 
   const codePrefix = codePrefixFromMode(mode);
   const xmlPrefix = xmlPrefixFromMode(mode);
-  return resources.filter(it => data.includes(`${ codePrefix }${ it }`) || data.includes(`${ xmlPrefix }${ it }`));
+  return resources.filter(
+    it => data.includes(`${ codePrefix }${ it.replace(/\./g, '_') }`) ||
+    data.includes(`${ xmlPrefix }${ it }`) ||
+    (mode === MODE.STYLE ? data.includes(`parent="${ it }"`) : false) ||
+    (mode === MODE.STYLE ? data.includes(`<style name="${ it }.`) : false)
+  );
 };
 
 const resourceXmlTag = mode => {
@@ -79,6 +85,8 @@ const resourceXmlTag = mode => {
       return 'color';
     case MODE.DIMEN:
       return 'dimen';
+    case MODE.STYLE:
+      return 'style';
     default:
       throw new Error(`Unknown mode ${ mode }`);
   }
@@ -94,6 +102,8 @@ const codePrefixFromMode = mode => {
       return 'R.dimen.';
     case MODE.LAYOUT:
       return 'R.layout.';
+    case MODE.STYLE:
+      return 'R.style.';
     default:
       throw new Error(`Unknown mode ${ mode }`);
   }
@@ -109,6 +119,8 @@ const xmlPrefixFromMode = mode => {
       return 'dimen/';
     case MODE.LAYOUT:
       return 'layout/';
+    case MODE.STYLE:
+      return 'style/';
     default:
       throw new Error(`Unknown mode ${ mode }`);
   }
